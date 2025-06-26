@@ -8,12 +8,12 @@
 
 #include "relayd.h"
 
-// Global variables needed by the functions
-LIST_HEAD(interfaces);
-int debug = 0;
-int route_table = 16800;
-uint8_t local_addr[4] = {192, 168, 1, 1};
-int local_route_table = 1;
+// External declarations for global variables (defined in original source files)
+extern struct list_head interfaces;
+extern int debug;
+extern int route_table;
+extern uint8_t local_addr[4];
+extern int local_route_table;
 
 // Mock interface for fuzzing
 static struct relayd_interface mock_rif = {
