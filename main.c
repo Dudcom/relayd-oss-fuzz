@@ -278,8 +278,7 @@ static struct relayd_host *add_host(struct relayd_interface *rif, const uint8_t 
 	struct relayd_host *host;
 	struct relayd_pending_route *route, *rtmp;
 
-	DPRINTF(1, "%s: adding host "IP_FMT" ("MAC_FMT")\n", rif->ifname,
-			IP_BUF(ipaddr), MAC_BUF(lladdr));
+
 
 	host = calloc(1, sizeof(*host));
 	INIT_LIST_HEAD(&host->routes);
