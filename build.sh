@@ -2,7 +2,7 @@
 
 # Update package list and install basic dependencies
 apt-get update
-apt-get install -y build-essential cmake pkg-config git
+apt-get install -y build-essential cmake pkg-config git libjson-c-dev
 
 # Set up dependencies directory
 DEPS_DIR="$PWD/deps"
@@ -14,8 +14,11 @@ if [ ! -d "libubox" ]; then
     echo "Downloading libubox..."
     git clone https://github.com/openwrt/libubox.git
     cd libubox
-    # Remove unnecessary components
-    rm -rf tests examples
+    # Remove unnecessary components to avoid CMake errors
+    rm -rf tests examples lua
+    # Also patch CMakeLists.txt to remove references to examples and lua
+    sed -i '/ADD_SUBDIRECTORY(examples)/d' CMakeLists.txt
+    sed -i '/ADD_SUBDIRECTORY(lua)/d' CMakeLists.txt
     cd ..
 fi
 
