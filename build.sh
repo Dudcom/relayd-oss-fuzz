@@ -65,6 +65,11 @@ cat > main_for_fuzz.c << 'EOF'
 // Global variables will be defined in the fuzzer instead
 #define MAIN_C_NO_MAIN
 
+// Include necessary headers for type definitions
+#include <stdint.h>
+#include <stdbool.h>
+#include <libubox/list.h>
+
 // External declarations for variables defined in fuzzer
 extern struct list_head interfaces;
 extern int debug;
@@ -78,7 +83,7 @@ static int inet_sock = -1;
 static int forward_bcast = 1;
 static int forward_dhcp = 1;
 static int parse_dhcp = 1;
-static struct list_head pending_routes = { &pending_routes, &pending_routes };
+static LIST_HEAD(pending_routes);
 
 EOF
 
