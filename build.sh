@@ -30,8 +30,8 @@ cmake .. -DCMAKE_INSTALL_PREFIX="$DEPS_DIR/install" \
          -DBUILD_LUA=OFF \
          -DBUILD_EXAMPLES=OFF \
          -DBUILD_TESTS=OFF \
-         -DBUILD_STATIC=ON \
-         -DBUILD_SHARED_LIBS=OFF
+         -DBUILD_STATIC=OFF \
+         -DBUILD_SHARED_LIBS=ON
 make -j$(nproc)
 make install
 cd "$DEPS_DIR"
@@ -124,7 +124,14 @@ echo "Finding and copying all shared library dependencies..."
 # Create lib directory
 mkdir -p "$OUT/lib"
 
-# Create a temporary script to copy dependencies
+# First, copy libubox from our custom installation
+echo "Copying libubox from custom installation..."
+if [ -f "$DEPS_DIR/install/lib/libubox.so" ]; then
+    cp "$DEPS_DIR/install/lib/libubox.so" "$OUT/lib/"
+    echo "Copied libubox.so from $DEPS_DIR/install/lib/libubox.so"
+fi
+
+# Create a temporary script to copy other dependencies
 cat > copy_deps.sh << 'EOFSCRIPT'
 #!/bin/bash
 BINARY="$1"
