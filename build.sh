@@ -58,12 +58,28 @@ $CC $CFLAGS -c dhcp.c -o dhcp.o
 $CC $CFLAGS -c route.c -o route.o
 
 # For main.c, we need to exclude the main() function and global variable definitions when building for fuzzing
-# Create a temporary file without the main function and conflicting globals
+# Create a temporary file without the main function and conflicting globals, but add extern declarations
 echo "Creating main source without main() function and global definitions..."
 cat > main_for_fuzz.c << 'EOF'
 // Include everything from main.c except the main() function and global variables
 // Global variables will be defined in the fuzzer instead
 #define MAIN_C_NO_MAIN
+
+// External declarations for variables defined in fuzzer
+extern struct list_head interfaces;
+extern int debug;
+extern uint8_t local_addr[4];
+extern int local_route_table;
+
+// External declarations for static variables from original main.c
+static int host_timeout = 30;
+static int host_ping_tries = 5;
+static int inet_sock = -1;
+static int forward_bcast = 1;
+static int forward_dhcp = 1;
+static int parse_dhcp = 1;
+static struct list_head pending_routes = { &pending_routes, &pending_routes };
+
 EOF
 
 # Extract everything from main.c except the main function and global variable definitions
