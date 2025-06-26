@@ -57,16 +57,29 @@ echo "Compiling relayd source files..."
 $CC $CFLAGS -c dhcp.c -o dhcp.o
 $CC $CFLAGS -c route.c -o route.o
 
-# For main.c, we need to exclude the main() function when building for fuzzing
-# Create a temporary file without the main function
-echo "Creating main source without main() function..."
+# For main.c, we need to exclude the main() function and global variable definitions when building for fuzzing
+# Create a temporary file without the main function and conflicting globals
+echo "Creating main source without main() function and global definitions..."
 cat > main_for_fuzz.c << 'EOF'
-// Include everything from main.c except the main() function
+// Include everything from main.c except the main() function and global variables
+// Global variables will be defined in the fuzzer instead
 #define MAIN_C_NO_MAIN
 EOF
 
-# Extract everything from main.c except the main function
-sed '/^int main(/,/^}[[:space:]]*$/d' main.c >> main_for_fuzz.c
+# Extract everything from main.c except the main function and global variable definitions
+sed -e '/^int main(/,/^}[[:space:]]*$/d' \
+    -e '/^static LIST_HEAD(pending_routes);/d' \
+    -e '/^LIST_HEAD(interfaces);/d' \
+    -e '/^int debug;/d' \
+    -e '/^static int host_timeout;/d' \
+    -e '/^static int host_ping_tries;/d' \
+    -e '/^static int inet_sock;/d' \
+    -e '/^static int forward_bcast;/d' \
+    -e '/^static int forward_dhcp;/d' \
+    -e '/^static int parse_dhcp;/d' \
+    -e '/^uint8_t local_addr\[4\];/d' \
+    -e '/^int local_route_table;/d' \
+    main.c >> main_for_fuzz.c
 
 $CC $CFLAGS -c main_for_fuzz.c -o main_for_fuzz.o
 

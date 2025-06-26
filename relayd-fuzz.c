@@ -22,13 +22,11 @@
 
 #include "relayd.h"
 
-// If these aren't defined in main_for_fuzz.c, define them here
-#ifndef FUZZER_GLOBALS_DEFINED
+// Global variables - these will be the only definitions since they're excluded from main_for_fuzz.c
 struct list_head interfaces = { &interfaces, &interfaces };
 int debug = 0;
 uint8_t local_addr[4] = {192, 168, 1, 1};
 int local_route_table = 0;
-#endif
 
 // Variables that were static in main.c - define them here
 static int host_timeout = 30;
@@ -110,12 +108,6 @@ static void fuzz_dhcp_packet(const uint8_t *data, size_t size) {
         return;
     }
     
-    // Ensure we have the function before calling it
-    if (!relayd_handle_dhcp_packet) {
-        FUZZ_DEBUG("ERROR: relayd_handle_dhcp_packet function not found!");
-        return;
-    }
-    
     bool result;
     
     FUZZ_DEBUG("Calling relayd_handle_dhcp_packet with forward=true, parse=true");
@@ -138,11 +130,6 @@ static void fuzz_broadcast_packet(const uint8_t *data, size_t size) {
         return;
     }
     
-    if (!relayd_forward_bcast_packet) {
-        FUZZ_DEBUG("ERROR: relayd_forward_bcast_packet function not found!");
-        return;
-    }
-    
     FUZZ_DEBUG("Calling relayd_forward_bcast_packet");
     relayd_forward_bcast_packet(&mock_rif, (void *)data, size);
     FUZZ_DEBUG("Broadcast packet forwarding complete");
@@ -154,11 +141,6 @@ static void fuzz_host_refresh(const uint8_t *data, size_t size) {
     
     if (size < 10) {
         FUZZ_DEBUG("Skipping host refresh test - too small (%zu bytes)", size);
-        return;
-    }
-    
-    if (!relayd_refresh_host) {
-        FUZZ_DEBUG("ERROR: relayd_refresh_host function not found!");
         return;
     }
     
@@ -174,7 +156,7 @@ static void fuzz_host_refresh(const uint8_t *data, size_t size) {
     struct relayd_host *host = relayd_refresh_host(&mock_rif, mac_addr, ip_addr);
     FUZZ_DEBUG("relayd_refresh_host returned: %p", (void*)host);
     
-    if (host && size >= 15 && relayd_add_host_route) {
+    if (host && size >= 15) {
         const uint8_t *dest_addr = data + 10;
         uint8_t mask = data[14];
         
@@ -195,11 +177,6 @@ static void fuzz_pending_route(const uint8_t *data, size_t size) {
     
     if (size < 9) {
         FUZZ_DEBUG("Skipping pending route test - too small (%zu bytes)", size);
-        return;
-    }
-    
-    if (!relayd_add_pending_route) {
-        FUZZ_DEBUG("ERROR: relayd_add_pending_route function not found!");
         return;
     }
     
@@ -265,6 +242,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
             break;
     }
     
-    FUZZ_DEBUG("=== FUZZER EXIT ===\n");
+    FUZZ_DEBUG("=== FUZZER EXIT ===");
     return 0;
 }
