@@ -22,20 +22,20 @@
 
 #include "relayd.h"
 
-// Global variables matching main.c exactly
-static LIST_HEAD(pending_routes);
-LIST_HEAD(interfaces);
-int debug;
+// External declarations for global variables (defined in main_for_fuzz.c)
+extern struct list_head interfaces;
+extern int debug;
+extern uint8_t local_addr[4];
+extern int local_route_table;
 
+// Static variables from main.c - these need to be declared extern since they're static in main.c
+// We'll initialize them in our init function
 static int host_timeout;
 static int host_ping_tries;
 static int inet_sock;
 static int forward_bcast;
 static int forward_dhcp;
 static int parse_dhcp;
-
-uint8_t local_addr[4];
-int local_route_table;
 
 // Initialize flag
 static bool fuzz_initialized = false;
