@@ -15,6 +15,41 @@ extern int route_table;
 extern uint8_t local_addr[4];
 extern int local_route_table;
 
+// Static variables from main.c that need to be defined for fuzzing
+static int host_timeout = 30;
+static int host_ping_tries = 5;
+static int inet_sock;
+static int forward_bcast = 1;
+static int forward_dhcp = 1;
+static int parse_dhcp = 1;
+
+// Initialize fuzzing environment
+static bool fuzz_initialized = false;
+
+static void init_fuzzing_environment(void) {
+    if (fuzz_initialized) {
+        return;
+    }
+    
+    // Initialize global variables
+    debug = 0;
+    local_route_table = 0;
+    
+    // Set up local address
+    local_addr[0] = 192;
+    local_addr[1] = 168;
+    local_addr[2] = 1;
+    local_addr[3] = 1;
+    
+    // Create a dummy socket for inet_sock (needed by some functions)
+    inet_sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (inet_sock < 0) {
+        inet_sock = -1; // Set to invalid but won't crash
+    }
+    
+    fuzz_initialized = true;
+}
+
 // Mock interface for fuzzing
 static struct relayd_interface mock_rif = {
     .ifname = "eth0",
@@ -103,6 +138,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     if (size < 2) {
         return 0;
     }
+    
+    // Initialize fuzzing environment once
+    init_fuzzing_environment();
     
     // Initialize the interfaces list if empty
     if (list_empty(&interfaces)) {
