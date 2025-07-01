@@ -22,13 +22,12 @@
 
 #include "relayd.h"
 
-// Global variables - these will be the only definitions since they're excluded from main_for_fuzz.c
 struct list_head interfaces = { &interfaces, &interfaces };
 int debug = 0;
 uint8_t local_addr[4] = {192, 168, 1, 1};
 int local_route_table = 0;
 
-// Variables that were static in main.c - define them here
+// these vars are in main.c: 
 static int host_timeout = 30;
 static int host_ping_tries = 5;
 static int inet_sock = -1;
@@ -36,13 +35,10 @@ static int forward_bcast = 1;
 static int forward_dhcp = 1;
 static int parse_dhcp = 1;
 
-// Initialize flag
 static bool fuzz_initialized = false;
 
-// Debug printing (disabled for production)
 #define FUZZ_DEBUG(fmt, ...)
 
-// Mock interface for fuzzing
 static struct relayd_interface mock_rif = {
     .ifname = "eth0",
     .sll = {
@@ -59,22 +55,18 @@ static struct relayd_interface mock_rif = {
     .rt_table = 100,
 };
 
-// Initialize the fuzzing environment
 static void init_fuzzing_environment(void) {
     if (fuzz_initialized) {
         return;
     }
     
-    // Ensure interfaces list is initialized
     if (interfaces.next == NULL || interfaces.prev == NULL) {
         INIT_LIST_HEAD(&interfaces);
     }
     
-    // Initialize mock interface lists
     INIT_LIST_HEAD(&mock_rif.list);
     INIT_LIST_HEAD(&mock_rif.hosts);
     
-    // Create inet socket if needed
     if (inet_sock < 0) {
         inet_sock = socket(AF_INET, SOCK_DGRAM, 0);
         if (inet_sock < 0) {
@@ -82,13 +74,11 @@ static void init_fuzzing_environment(void) {
         }
     }
     
-    // Set debug mode
     debug = 1;
     
     fuzz_initialized = true;
 }
 
-// Test DHCP packet parsing
 static void fuzz_dhcp_packet(const uint8_t *data, size_t size) {
     if (size < 20) {
         return;
@@ -98,7 +88,6 @@ static void fuzz_dhcp_packet(const uint8_t *data, size_t size) {
     relayd_handle_dhcp_packet(&mock_rif, (void *)data, size, false, true);
 }
 
-// Test broadcast packet forwarding
 static void fuzz_broadcast_packet(const uint8_t *data, size_t size) {
     if (size < 14) {
         return;
@@ -107,7 +96,6 @@ static void fuzz_broadcast_packet(const uint8_t *data, size_t size) {
     relayd_forward_bcast_packet(&mock_rif, (void *)data, size);
 }
 
-// Test host refresh functionality
 static void fuzz_host_refresh(const uint8_t *data, size_t size) {
     if (size < 10) {
         return;
@@ -126,7 +114,6 @@ static void fuzz_host_refresh(const uint8_t *data, size_t size) {
     }
 }
 
-// Test pending route functionality
 static void fuzz_pending_route(const uint8_t *data, size_t size) {
     if (size < 9) {
         return;
@@ -145,15 +132,12 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         return 0;
     }
     
-    // Initialize environment
     init_fuzzing_environment();
     
-    // Add mock interface to list if needed
     if (list_empty(&interfaces)) {
         list_add(&mock_rif.list, &interfaces);
     }
     
-    // Use first byte to determine fuzzing target
     uint8_t fuzz_type = data[0] % 4;
     const uint8_t *fuzz_data = data + 1;
     size_t fuzz_size = size - 1;

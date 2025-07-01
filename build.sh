@@ -168,8 +168,13 @@ readelf -d $OUT/relayd_fuzzer | grep -E "(RPATH|RUNPATH)" || echo "No rpath foun
 echo "Shared libraries in $OUT/lib:"
 ls -la $OUT/lib/ || echo "No shared libraries copied"
 
-# Clean up temporary files
-rm -f *.o main_for_fuzz.c copy_deps.sh
+# Copy source files to expected location for coverage analysis
+echo "Copying source files for coverage analysis..."
+mkdir -p "$OUT/src/oss-fuzz-auto"
+cp main_for_fuzz.c "$OUT/src/oss-fuzz-auto/"
+
+# Clean up temporary files (but preserve main_for_fuzz.c for coverage)
+rm -f *.o copy_deps.sh
 
 echo "Build completed successfully!"
 echo "Fuzzer binary: $OUT/relayd_fuzzer"
